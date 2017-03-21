@@ -1,8 +1,7 @@
 package adl;
 
 public abstract class Activity{
-
-    // by ...
+	
 	public static final String SingSongIntent = "SingSongIntent";
 	public static final String TurnOnTVIntent = "TurnOnTVIntent";
 	public static final String TakeShowerIntent = "TakeShowerIntent";
