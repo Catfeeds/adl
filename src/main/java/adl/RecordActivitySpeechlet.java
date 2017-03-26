@@ -9,6 +9,9 @@
  */
 package adl;
 
+import java.sql.Timestamp;
+
+import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +27,12 @@ import com.amazon.speech.speechlet.SpeechletResponse;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
 import com.amazon.speech.ui.SimpleCard;
+
+import constants.MyIntent;
+import constants.MyResponse;
+import data.ActionBean;
+import data.ActionMapper;
+import data.SqlSessionHelper;
 
 /**
  * This sample shows how to create a simple speechlet for handling speechlet requests.
@@ -44,7 +53,7 @@ public class RecordActivitySpeechlet implements Speechlet {
             throws SpeechletException {
         log.info("onLaunch requestId={}, sessionId={}", request.getRequestId(),
                 session.getSessionId());
-        return getAskResponse("Welcome to Activities of Daily Life, you can say activities in your daily life such as I go to the gym, I sing a song, I take a shower and so on.", "Welcome Response");
+        return getAskResponse(MyResponse.Welcome, MyIntent.Welcome);
     }
 
     @Override
@@ -56,23 +65,30 @@ public class RecordActivitySpeechlet implements Speechlet {
         Intent intent = request.getIntent();
         String intentName = (intent != null) ? intent.getName() : null;
 
-        if (Activity.SingSongIntent.equals(intentName)) {
-            return getAskResponse("You sing well. Singing is a good way to relax and make you feel confident.", "SingSong Response");
-        } else if(Activity.TurnOnTVIntent.equals(intentName)){
-        	return getAskResponse("Enjoy your TV time. Watching TV is a good way to lift your mood and dissolve the depression", "TurnOnTV Response");
-        } else if(Activity.TakeShowerIntent.equals(intentName)){
-        	return getAskResponse("Great! You are living a healthy lifestyle. Enjoy your bathtime!", "TakeShower Response");
-        } else if(Activity.GoGymIntent.equals(intentName)){
-        	return getAskResponse("Excellent! Wish you will be stronger the next time!", "GoGym Response");
-        } else if(Activity.HaveLunchIntent.equals(intentName)){
-        	return getAskResponse("Keep going! You will be healthy if you keep a balanced diet every day!", "HaveLunch Response");
-        } else if ("AMAZON.HelpIntent".equals(intentName)) {
-            return getAskResponse("This skill is a recorder of activities in your daily life and feed back some interactions with your activities. You can say activities like I go to the gym, I sing a song, I take a shower, I turn on the TV and so on.", "Help Response");
-        } else if ("AMAZON.CancelIntent".equals(intentName) || "AMAZON.StopIntent".equals(intentName)) {
-            return getTellResponse("Goodbye. See you next time", "Exit Response");
+        if (MyIntent.SingSong.equals(intentName)) {
+        	writeAction(intentName);
+            return getAskResponse(MyResponse.SingSong, MyIntent.SingSong);
+        } else if(MyIntent.TurnOnTV.equals(intentName)){
+        	writeAction(intentName);
+        	return getAskResponse(MyResponse.TurnOnTV, MyIntent.TurnOnTV);
+        } else if(MyIntent.TakeShower.equals(intentName)){
+        	writeAction(intentName);
+        	return getAskResponse(MyResponse.TakeShower, MyIntent.TakeShower);
+        } else if(MyIntent.GoGym.equals(intentName)){
+        	writeAction(intentName);
+        	return getAskResponse(MyResponse.GoGym, MyIntent.GoGym);
+        } else if(MyIntent.HaveLunch.equals(intentName)){
+        	writeAction(intentName);
+        	return getAskResponse(MyResponse.HaveLunch, MyIntent.HaveLunch);
+        } else if (MyIntent.Help.equals(intentName)) {
+        	return getAskResponse(MyResponse.Help, MyIntent.Help);
+        } else if (MyIntent.Cancel.equals(intentName) || MyIntent.Stop.equals(intentName)) {
+            return getTellResponse(MyResponse.Exit, MyIntent.Exit);
         } else {
             throw new SpeechletException("Invalid Intent");
         }
+        
+        
     }
 
     @Override
@@ -90,7 +106,7 @@ public class RecordActivitySpeechlet implements Speechlet {
      */
     private SpeechletResponse getAskResponse(String speechText, String title) {
 
-    	String promptText = "And what's your next activity?";
+    	String promptText = MyResponse.AskNext;
     	speechText += promptText;
     	
         // Create the Simple card content.
@@ -126,5 +142,47 @@ public class RecordActivitySpeechlet implements Speechlet {
         speech.setText(speechText);
 
         return SpeechletResponse.newTellResponse(speech, card);
+    }
+    
+    //将用户输入的动作存入数据库
+    public void writeAction(String intent) {
+    	
+    	SqlSession session = null;
+		try {
+			session = SqlSessionHelper.getSessionFactory().openSession();
+			ActionMapper mapper = session.getMapper(ActionMapper.class);
+			
+			ActionBean actionBean = new ActionBean();
+			actionBean.setName(camelToUtterance(intent));//将驼峰字符串转成小写+空格形式的的日常表达话语
+			actionBean.setTime(new Timestamp(System.currentTimeMillis()));
+			mapper.addActionBean(actionBean);
+
+			session.commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			session.close();
+		}
+    }
+    
+	 /**
+     * 将驼峰字符串转成小写+空格形式的的日常表达话语
+     */
+    public static String camelToUtterance(String param) {
+        if (param == null || "".equals(param.trim())) {
+            return "";
+        }
+        int len = param.length();
+        StringBuilder sb = new StringBuilder(len);
+        for (int i = 0; i < len; i++) {
+            char c = param.charAt(i);
+            if (Character.isUpperCase(c)) {
+                sb.append(' ');
+                sb.append(Character.toLowerCase(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString().trim();
     }
 }
