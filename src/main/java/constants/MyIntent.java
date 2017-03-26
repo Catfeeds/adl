@@ -3,6 +3,13 @@ package constants;
 //亚马逊识别intent时用
 public abstract class MyIntent{
 	
+	//common
+	public static final String Welcome = "Welcome";
+	public static final String Help = "AMAZON.HelpIntent";
+	public static final String Cancel = "AMAZON.CancelIntent";
+	public static final String Stop = "AMAZON.StopIntent";
+	public static final String Exit = "Exit";
+	
 	//morning.xml
 	public static final String EnterBathroom = "EnterBathroom";
 	public static final String WashHands = "WashHands";
@@ -42,11 +49,6 @@ public abstract class MyIntent{
 	
 	
 	//测试! 后期删除
-	public static final String Welcome = "Welcome";
-	public static final String Help = "AMAZON.HelpIntent";
-	public static final String Cancel = "AMAZON.CancelIntent";
-	public static final String Stop = "AMAZON.StopIntent";
-	public static final String Exit = "Exit";
 	public static final String SingSong = "SingSongIntent";
 	public static final String TurnOnTV = "TurnOnTVIntent";
 	public static final String TakeShower = "TakeShowerIntent";
